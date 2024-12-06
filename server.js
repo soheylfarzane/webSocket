@@ -42,13 +42,33 @@ io.on('connection', (socket) => {
     });
 });
 
-// Endpoint برای دریافت پیام از سیستم دیگر (مثلاً Laravel)
+// Endpoint برای دریافت داده‌های Traccar و ارسال به کانال `positions`
+app.post('/positions', (req, res) => {
+    const data = req.body;
+
+    if (data && Object.keys(data).length > 0) {
+        console.log('دریافت داده‌های Traccar:', data);
+
+        // ارسال داده به کانال `positions`
+        io.to('positions').emit('update_position', data);
+
+        res.status(200).send({ status: 'success', message: 'Position broadcasted to channel.' });
+    } else {
+        console.log('درخواست نامعتبر برای /positions:', req.body);
+        res.status(400).send({ status: 'error', message: 'Invalid request payload.' });
+    }
+});
+
+// Endpoint برای دریافت داده‌های broadcast و ارسال به کانال‌های مشخص شده
 app.post('/broadcast', (req, res) => {
     const { channel, event, message } = req.body;
 
     if (channel && event && message) {
         console.log(`دریافت پیام برای کانال ${channel}:`, message);
-        io.to(channel).emit(event, message); // ارسال پیام به کانال مشخص شده
+
+        // ارسال پیام به کانال مشخص شده
+        io.to(channel).emit(event, message);
+
         res.status(200).send({ status: 'success', message: 'Message broadcasted successfully.' });
     } else {
         console.log('درخواست نامعتبر برای /broadcast:', req.body);

@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تست Socket.IO</title>
+    <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; direction: rtl; text-align: center; margin: 20px; }
+        #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll; margin-top: 10px; }
+        #messages p { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO: تست کانال‌ها</h1>
+    <input id="channelInput" type="text" placeholder="نام کانال">
+    <button id="joinButton">پیوستن به کانال</button>
+    <br><br>
+    <textarea id="messageInput" placeholder='{"title": "عنوان", "body": "متن پیام"}'></textarea>
+    <button id="sendButton">ارسال پیام</button>
+    <div id="messages">
+        <h3>پیام‌ها:</h3>
+    </div>
+
+    <script>
+        const socket = io('http://your-server-ip:3000'); // آدرس سرور خود را جایگزین کنید
+
+        let currentChannel = ''; // کانال فعلی
+
+        // پیوستن به کانال
+        document.getElementById('joinButton').addEventListener('click', () => {
+            const channel = document.getElementById('channelInput').value;
+            if (channel.trim() !== '') {
+                currentChannel = channel;
+                socket.emit('join_channel', channel);
+                console.log(`به کانال ${channel} پیوستید`);
+            }
+        });
+
+        // ارسال پیام به کانال
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const rawMessage = document.getElementById('messageInput').value;
+            try {
+                const message = JSON.parse(rawMessage);
+                if (currentChannel !== '') {
+                    socket.emit('send_message', { channel: currentChannel, message });
+                    console.log('پیام ارسال شد:', message);
+                } else {
+                    alert('لطفاً ابتدا به یک کانال بپیوندید');
+                }
+            } catch (e) {
+                alert('فرمت JSON پیام نادرست است');
+            }
+        });
+
+        // دریافت پیام از کانال
+        socket.on('receive_message', (data) => {
+            const messagesDiv = document.getElementById('messages');
+            const newMessage = document.createElement('p');
+            newMessage.innerHTML = `<strong>${data.title}:</strong> ${data.body}`;
+            messagesDiv.appendChild(newMessage);
+        });
+    </script>
+</body>
+</html>

@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const bodyParser = require('body-parser');
+const fetch = require('node-fetch'); // برای ارسال درخواست به وب‌هوک
 
 const app = express();
 app.use(bodyParser.json()); // پشتیبانی از JSON برای درخواست‌ها
@@ -48,14 +49,36 @@ io.on('connection', (socket) => {
 });
 
 // Endpoint برای دریافت داده‌های Traccar و ارسال به کانال `event`
-app.post('/events', (req, res) => {
+app.post('/events', async (req, res) => {
     const data = req.body;
 
     // ارسال همه پیام‌ها به کانال `event`
     io.to('event').emit('new_event', data);
 
+    // بررسی نوع رویداد و ارسال به وب‌هوک به غیر از online و offline
+    if (data.type !== 'deviceOffline' && data.type !== 'deviceOnline') {
+        try {
+            // ارسال پیام به سرور Laravel
+            const response = await fetch('https://goldenbat.app/api/v2/webhook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                console.log(`پیام با موفقیت به وب‌هوک ارسال شد:`, data);
+            } else {
+                console.error('خطا در ارسال پیام به وب‌هوک:', await response.text());
+            }
+        } catch (error) {
+            console.error('خطا در هنگام ارتباط با وب‌هوک:', error.message);
+        }
+    }
+
     // پاسخ موفقیت‌آمیز
-    res.status(200).send({ status: 'success', message: 'Event broadcasted successfully.' });
+    res.status(200).send({ status: 'success', message: 'Event processed successfully.' });
 });
 
 // Endpoint برای دریافت داده‌های broadcast و ارسال به کانال‌های مشخص شده

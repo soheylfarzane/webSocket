@@ -6,11 +6,16 @@ const bodyParser = require('body-parser');
 const app = express();
 app.use(bodyParser.json()); // پشتیبانی از JSON برای درخواست‌ها
 
+// ایجاد سرور HTTP
 const server = http.createServer(app);
+
+// ایجاد Socket.IO با تنظیمات CORS
 const io = new Server(server, {
     cors: {
-        origin: '*', // اجازه اتصال از هر منبع
-        methods: ['GET', 'POST']
+        origin: '*', // اجازه دسترسی از همه دامنه‌ها
+        methods: ['GET', 'POST'], // روش‌های مجاز
+        allowedHeaders: ['Content-Type'], // هدرهای مجاز
+        credentials: true // اگر احراز هویت نیاز است
     }
 });
 
@@ -42,26 +47,16 @@ io.on('connection', (socket) => {
     });
 });
 
-// Endpoint برای دریافت داده‌های Traccar و ارسال به کانال `positions`
-app.post('/positions', (req, res) => {
+// Endpoint برای دریافت داده‌های Traccar و ارسال به کانال `event`
+app.post('/events', (req, res) => {
     const data = req.body;
 
-    if (data && Object.keys(data).length > 0) {
-        console.log('دریافت داده‌های Traccar:', data);
+    // ارسال همه پیام‌ها به کانال `event`
+    io.to('event').emit('new_event', data);
 
-        // ارسال داده به کانال `positions`
-        io.to('positions').emit('update_position', data);
-
-        res.status(200).send({ status: 'success', message: 'Position broadcasted to channel.' });
-    } else {
-        console.log('درخواست نامعتبر برای /positions:', req.body);
-        res.status(400).send({ status: 'error', message: 'Invalid request payload.' });
-    }
+    // پاسخ موفقیت‌آمیز
+    res.status(200).send({ status: 'success', message: 'Event broadcasted successfully.' });
 });
-
-
-
-
 
 // Endpoint برای دریافت داده‌های broadcast و ارسال به کانال‌های مشخص شده
 app.post('/broadcast', (req, res) => {

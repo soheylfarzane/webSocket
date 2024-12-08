@@ -49,7 +49,7 @@ io.on('connection', (socket) => {
 });
 
 // Endpoint برای دریافت داده‌های Traccar و ارسال به کانال `event`
-app.post('/events', async (req, res) => {
+app.post('/events', (req, res) => {
     const data = req.body;
 
     // ارسال همه پیام‌ها به کانال `event`
@@ -57,24 +57,23 @@ app.post('/events', async (req, res) => {
 
     // بررسی نوع پیام و ارسال به وب‌هوک اگر نوع پیام غیر از online و offline باشد
     if (data.type !== 'deviceOffline' && data.type !== 'deviceOnline') {
-        try {
-            // ارسال پیام به وب‌هوک
-            const response = await fetch('https://goldenbat.app/api/v2/webhook', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
+        fetch('https://goldenbat.app/api/v2/webhook', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+            .then((response) => {
+                if (response.ok) {
+                    console.log('پیام با موفقیت به وب‌هوک ارسال شد:', data);
+                } else {
+                    console.error('خطا در ارسال پیام به وب‌هوک:', response.statusText);
+                }
+            })
+            .catch((error) => {
+                console.error('خطا در هنگام ارتباط با وب‌هوک:', error.message);
             });
-
-            if (response.ok) {
-                console.log('پیام با موفقیت به وب‌هوک ارسال شد:', data);
-            } else {
-                console.error('خطا در ارسال پیام به وب‌هوک:', await response.text());
-            }
-        } catch (error) {
-            console.error('خطا در هنگام ارتباط با وب‌هوک:', error.message);
-        }
     }
 
     // پاسخ موفقیت‌آمیز

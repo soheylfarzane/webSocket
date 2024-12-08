@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const bodyParser = require('body-parser');
+const fetch = require('node-fetch'); // برای ارسال درخواست به Laravel
 
 const app = express();
 app.use(bodyParser.json()); // پشتیبانی از JSON برای درخواست‌ها
@@ -42,21 +43,36 @@ io.on('connection', (socket) => {
     });
 });
 
-// Endpoint برای دریافت داده‌های Traccar و ارسال به کانال `positions`
-app.post('/positions', (req, res) => {
+// Endpoint برای دریافت داده‌های Traccar
+app.post('/events', async (req, res) => {
     const data = req.body;
 
-    if (data && Object.keys(data).length > 0) {
-        console.log('دریافت داده‌های Traccar:', data);
+    // ارسال همه پیام‌ها به کانال وب‌سوکت
+    io.to('event').emit('new_event', data);
 
-        // ارسال داده به کانال `positions`
-        io.to('positions').emit('update_position', data);
+    // بررسی نوع رویداد و ارسال به Laravel
+    if (data.type && data.type !== 'deviceOffline' && data.type !== 'deviceOnline') {
+        try {
+            // ارسال پیام به سرور Laravel
+            const response = await fetch('https://goldenbat.app/api/v2/webhook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
 
-        res.status(200).send({ status: 'success', message: 'Position broadcasted to channel.' });
-    } else {
-        console.log('درخواست نامعتبر برای /positions:', req.body);
-        res.status(400).send({ status: 'error', message: 'Invalid request payload.' });
+            if (response.ok) {
+                console.log('پیام با موفقیت به Laravel ارسال شد:', data);
+            } else {
+                console.error('خطا در ارسال پیام به Laravel:', await response.text());
+            }
+        } catch (error) {
+            console.error('خطا در هنگام ارتباط با Laravel:', error.message);
+        }
     }
+
+    res.status(200).send({ status: 'success', message: 'Event processed successfully.' });
 });
 
 // Endpoint برای دریافت داده‌های broadcast و ارسال به کانال‌های مشخص شده

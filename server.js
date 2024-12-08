@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const WebSocket = require('ws'); // برای اتصال WebSocket خارجی
 const bodyParser = require('body-parser');
 
 const app = express();
@@ -73,6 +74,29 @@ app.post('/broadcast', (req, res) => {
         console.log('درخواست نامعتبر برای /broadcast:', req.body);
         res.status(400).send({ status: 'error', message: 'Invalid request payload.' });
     }
+});
+
+// اتصال به WebSocket خارجی
+const wsUrl = 'ws://185.164.72.86:8082/api/socket?token=RzBFAiAQynwqdT92TRp1ZjyvMoHOiP-k5-6C-fdv7mP7KlrPugIhAJZXhiv-o-57kNdtZn_dWb0DFxcVkWfYxizjrWrIE_2leyJ1IjozLCJlIjoiMjAzMC0wMS0xMlQyMDozMDowMC4wMDArMDA6MDAifQ';
+const externalSocket = new WebSocket(wsUrl);
+
+externalSocket.on('open', () => {
+    console.log('WebSocket connection to external server established.');
+});
+
+externalSocket.on('message', (message) => {
+    console.log('پیام دریافتی از WebSocket خارجی:', message);
+
+    // ارسال پیام به کانال `positions` در Socket.IO
+    io.to('positions').emit('update_position', JSON.parse(message));
+});
+
+externalSocket.on('error', (error) => {
+    console.error('خطای WebSocket خارجی:', error.message);
+});
+
+externalSocket.on('close', (code) => {
+    console.log(`WebSocket connection closed with code: ${code}`);
 });
 
 // اجرای سرور روی پورت 3000

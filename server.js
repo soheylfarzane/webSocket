@@ -53,7 +53,7 @@ app.post('/events', (req, res) => {
     const data = req.body;
 
     // ارسال همه پیام‌ها به کانال `event`
-    io.to('event').emit('new_event', data);
+    io.to('events').emit('new_event', data);
 
     // پاسخ موفقیت‌آمیز
     res.status(200).send({ status: 'success', message: 'Event broadcasted successfully.' });

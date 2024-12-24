@@ -77,7 +77,7 @@ app.post('/broadcast', (req, res) => {
 });
 
 // اتصال به WebSocket خارجی
-const wsUrl = 'ws://185.164.72.86:8082/api/socket?token=RzBFAiAQynwqdT92TRp1ZjyvMoHOiP-k5-6C-fdv7mP7KlrPugIhAJZXhiv-o-57kNdtZn_dWb0DFxcVkWfYxizjrWrIE_2leyJ1IjozLCJlIjoiMjAzMC0wMS0xMlQyMDozMDowMC4wMDArMDA6MDAifQ';
+const wsUrl = 'ws://185.164.72.86:8089/api/socket?token=RzBFAiAQynwqdT92TRp1ZjyvMoHOiP-k5-6C-fdv7mP7KlrPugIhAJZXhiv-o-57kNdtZn_dWb0DFxcVkWfYxizjrWrIE_2leyJ1IjozLCJlIjoiMjAzMC0wMS0xMlQyMDozMDowMC4wMDArMDA6MDAifQ';
 const externalSocket = new WebSocket(wsUrl);
 
 externalSocket.on('open', () => {
